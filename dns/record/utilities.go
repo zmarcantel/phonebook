@@ -20,3 +20,8 @@ func CreateMessageLabel(source string) ([]byte, error) {
 
     return bytes.TrimSpace(buffer.Bytes()), nil
 }
+
+
+func RawToRecord(raw *RawRecord) (Record, error) {
+    return nil, nil
+}

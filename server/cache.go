@@ -14,7 +14,7 @@ func AddRecord(rec record.Record) error {
     if rec == nil { return errors.New("ERROR: Cannot add nil record.") }
     if cache == nil { cache = make(map[string][]record.Record) }
 
-    var header = rec.Basics()
+    var header = rec.Header()
     var otherRecords = FindRecordsByLabel(header.Name)
     if otherRecords == nil {
         cache[header.Name] = make([]record.Record, 0)
@@ -41,7 +41,7 @@ func FindRecord(label string, rType uint16, rClass uint16) (record.Record, error
     }
 
     for _, rec := range records {
-        var header = rec.Basics()
+        var header = rec.Header()
         if header.Type == rType {
             return rec, nil
         }

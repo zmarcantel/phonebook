@@ -14,7 +14,7 @@ func AnswerQuestions(questions []dns.Question) ([]record.Record, error) {
         var rec, err = FindRecord(question.Name, question.Type, question.Class)
         if err != nil {
             if err == ErrNotFound {
-                fmt.Printf("%s|%d not found\n", question.Name, question.Type)
+                fmt.Printf("%s (type: %d) | not found\n", question.Name, question.Type)
                 continue
             } else {
                 return nil, err

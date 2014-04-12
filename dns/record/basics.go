@@ -2,7 +2,6 @@ package record
 
 import (
     "fmt"
-    "net"
     "time"
     "bytes"
     "encoding/binary"
@@ -25,17 +24,13 @@ func (self *RecordHeader) String() string {
 }
 
 type Record interface {
-    Basics()        RecordHeader
+    Header()        *RecordHeader
     Print()
     Data()          []byte
 }
 
 type RawRecord struct {
-    Name            []byte
-    Type            uint16
-    Class           uint16
-    TTL             uint32
-    Length          uint16
+    RecordHeader
     Data            []byte
 }
 
@@ -46,7 +41,7 @@ func (self RecordCollection) Serialize() ([]byte, error) {
     var buffer = bytes.NewBuffer(result)
 
     for _, rec := range self {
-        var header = rec.Basics()
+        var header = rec.Header()
         var data = rec.Data()
         var label, err = CreateMessageLabel(header.Name)
         if err != nil { return nil, err }
@@ -66,39 +61,8 @@ func (self RecordCollection) Serialize() ([]byte, error) {
 
 func (self RecordCollection) Print(indent string) {
     for _, a := range self {
-        fmt.Printf("%sName: %s\n", indent, a.Basics().Name)
-        fmt.Printf("%s\tClass: %d\n", indent, a.Basics().Class)
-        fmt.Printf("%s\t Type: %d\n", indent, a.Basics().Type)
+        fmt.Printf("%sName: %s\n", indent, a.Header().Name)
+        fmt.Printf("%s\tClass: %d\n", indent, a.Header().Class)
+        fmt.Printf("%s\t Type: %d\n", indent, a.Header().Type)
     }
-}
-
-//----------------------------------------------
-//  A Record
-//      Hostname -> IPV4
-//----------------------------------------------
-
-type ARecord struct {
-    Header          RecordHeader
-    IP              net.IP
-}
-func (self *ARecord) Basics() RecordHeader { return self.Header }
-func (self *ARecord) Data() []byte { return []byte(self.IP)[len(self.IP) - 4: ] }
-func (self *ARecord) Print() {
-    fmt.Printf("%s\tIP: %+v\n", self.Header.String(), self.IP)
-}
-
-
-//----------------------------------------------
-//  AAAA Record
-//      Hostname -> IPV6
-//----------------------------------------------
-
-type AAAARecord struct {
-    Header          RecordHeader
-    IP              net.IP
-}
-func (self *AAAARecord) Basics() RecordHeader { return self.Header }
-func (self *AAAARecord) Data() []byte { return []byte(self.IP)[len(self.IP) - 16: ] }
-func (self *AAAARecord) Print() {
-    fmt.Printf("AAAA: %s\n\tIP: %+v\n\tClass: %d\n\tTTL: %+v\n", self.Header.Name, self.IP, self.Header.Class, self.Header.TTL)
 }

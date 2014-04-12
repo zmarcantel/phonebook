@@ -1,7 +1,9 @@
 package dns
 
 import (
+    "time"
     "bytes"
+    "strconv"
     "encoding/binary"
 
     "github.com/zmarcantel/phonebook/dns/record"
@@ -26,15 +28,21 @@ func UnpackResources(source []byte, count int) ([]*record.RawRecord, int) {
         binary.Read(bytes.NewReader(source[offset:offset+2]), binary.BigEndian, &rLength)
         offset += 2
 
+        var ttlDuration, err = time.ParseDuration(strconv.Itoa(int(rTTL)) + "s")
+        if err != nil {
+            panic (err) // TODO: don't panic
+        }
         var rData = source[offset:offset + int(rLength)]
 
         result[i] = &record.RawRecord{
-            Name:            []byte(name),
-            Type:            rType,
-            Class:           rClass,
-            TTL:             rTTL,
-            Length:          rLength,
-            Data:            rData,
+            record.RecordHeader{
+                name,
+                rType,
+                rClass,
+                ttlDuration,
+                rLength,
+            },
+            rData,
         }
     }
 
