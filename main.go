@@ -5,8 +5,8 @@ import (
     "net"
     "time"
 
-    "./server"
-    "./dns/record"
+    "github.com/zmarcantel/phonebook/server"
+    "github.com/zmarcantel/phonebook/dns/record"
 
 )
 

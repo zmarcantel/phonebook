@@ -3,8 +3,8 @@ package server
 import (
     "fmt"
 
-    "../dns"
-    "../dns/record"
+    "github.com/zmarcantel/phonebook/dns"
+    "github.com/zmarcantel/phonebook/dns/record"
 )
 
 func AnswerQuestions(questions []dns.Question) ([]record.Record, error) {

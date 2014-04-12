@@ -6,7 +6,7 @@ import (
     "errors"
     "encoding/binary"
 
-    "./record"
+    "github.com/zmarcantel/phonebook/dns/record"
 )
 
 const (

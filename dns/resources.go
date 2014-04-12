@@ -4,7 +4,7 @@ import (
     "bytes"
     "encoding/binary"
 
-    "./record"
+    "github.com/zmarcantel/phonebook/dns/record"
 )
 
 func UnpackResources(source []byte, count int) ([]*record.RawRecord, int) {

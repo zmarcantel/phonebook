@@ -5,7 +5,7 @@ import (
     "bytes"
     "encoding/binary"
 
-    "./record"
+    "github.com/zmarcantel/phonebook/dns/record"
 )
 
 

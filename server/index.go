@@ -6,8 +6,8 @@ import (
     "time"
     "errors"
 
-    "../dns"
-    "../dns/record"
+    "github.com/zmarcantel/phonebook/dns"
+    "github.com/zmarcantel/phonebook/dns/record"
 )
 
 const dnsTimeout time.Duration = 2 * 1e9

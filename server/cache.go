@@ -3,7 +3,7 @@ package server
 import (
     "errors"
 
-    "../dns/record"
+    "github.com/zmarcantel/phonebook/dns/record"
 )
 
 var ErrNotFound = errors.New("ERROR: That record does not exist")
