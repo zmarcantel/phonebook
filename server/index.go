@@ -66,6 +66,9 @@ func serve(conn *net.UDPConn, addr net.Addr, content []byte) {
             panic(err) // TODO: keep calm
         }
 
+        fmt.Println("Reponse:")
+        response.Print("\t\t")
+
         _, err = conn.WriteTo(serialized, addr)
         if err != nil {
             fmt.Printf("ERROR: There was an error responding to request:\n%s\n\n", err)
@@ -80,12 +83,12 @@ func generateAnswerMessage(request *dns.Message, answers []record.Record) dns.Me
         ID: request.Header.ID,
         Response: true,
         Opcode: request.Header.Opcode,
-        Authoritative: true,         // TODO: set this truthfully
-        Truncated: false,            // TODO: set this truthfully
+        Authoritative: request.Header.Authoritative,    // TODO: set this truthfully
+        Truncated: false,                               // TODO: set this truthfully
         RecursionDesired: request.Header.RecursionDesired,
-        RecursionAvailable: request.Header.RecursionAvailable,
+        RecursionAvailable: true,
         Rcode: 0, // no error
-        QDCount: 0,
+        QDCount: uint16(len(request.Questions)),
         ANCount: uint16(len(answers)),
         NSCount: 0,
         ARCount: 0,
@@ -93,7 +96,7 @@ func generateAnswerMessage(request *dns.Message, answers []record.Record) dns.Me
 
     return dns.Message{
         Header: header,
-        Questions: nil,
+        Questions: request.Questions,
         Answers: answers,
         Ns: nil,
         Extra:nil,

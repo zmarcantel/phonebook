@@ -2,6 +2,7 @@ package server
 
 import (
     "errors"
+    "strings"
 
     "github.com/zmarcantel/phonebook/dns/record"
 )
@@ -21,13 +22,18 @@ func AddRecord(rec record.Record) error {
     }
 
     otherRecords = append(otherRecords, rec)
-    cache[header.Name] = otherRecords
+    switch (rec.Header().Type) {
+
+        default:
+            cache[strings.TrimSuffix(header.Name, ".")] = otherRecords
+            break
+    }
 
     return nil
 }
 
 func FindRecordsByLabel(label string) []record.Record {
-    if records, exists := cache[label] ; exists {
+    if records, exists := cache[strings.TrimSuffix(label, ".")] ; exists {
         return records
     } else {
         return nil

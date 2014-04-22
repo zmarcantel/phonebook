@@ -4,6 +4,7 @@ import (
     "fmt"
     "net"
     "time"
+    "bytes"
     "errors"
 )
 
@@ -25,9 +26,29 @@ func (self *ARecord) Header() *RecordHeader {
         self.RDataLength,
     }
 }
-func (self *ARecord) Data() []byte { return []byte(self.IP)[len(self.IP) - 4: ] }
-func (self *ARecord) Print() {
-    fmt.Printf("%s\tIP: %+v\n", self.Header().String(), self.IP)
+
+func (self *ARecord) Data() ([]byte, error) {
+    return []byte(self.IP)[len(self.IP) - 4: ], nil
+}
+
+func (self *ARecord) Print(indent string) {
+    fmt.Printf("%sHeader:\n%s\t%s\n", indent, indent, self.Header().String())
+    fmt.Printf("%s\t     IP: %+v", self.IP)
+}
+
+func (self *ARecord) Serialize() ([]byte, error) {
+    var result = make([]byte, 0)
+    var buffer = bytes.NewBuffer(result)
+
+    var header, err = self.Header().Serialize()
+    if err != nil { return nil, err }
+    buffer.Write(header)
+
+    data, err := self.Data()
+    if err != nil { return nil, err }
+    buffer.Write(data)
+
+    return buffer.Bytes(), nil
 }
 
 func A(hostname string, ttl time.Duration, target net.IP) (*ARecord, error) {
@@ -41,8 +62,8 @@ func A(hostname string, ttl time.Duration, target net.IP) (*ARecord, error) {
     return &ARecord{
         RecordHeader{
             hostname,
+            A_RECORD,
             uint16( 1 ),                 // 'IN' class
-            1,                           // A Records are class 1
             ttl,
             4,                           // A Records send the target IP in a 4-octet data section
         },
@@ -63,17 +84,36 @@ type AAAARecord struct {
 }
 func (self *AAAARecord) Header() *RecordHeader {
     return &RecordHeader {
-        self.Name,
-        self.Class,
-        self.Type,
-        self.TTL,
-        self.RDataLength,
+        Name:        self.Name,
+        Class:       self.Class,
+        Type:        self.Type,
+        TTL:         self.TTL,
+        RDataLength: self.RDataLength,
     }
 }
-func (self *AAAARecord) Data() []byte { return []byte(self.IP)[len(self.IP) - 16: ] }
-func (self *AAAARecord) Print() {
-    var header = self.Header()
-    fmt.Printf("AAAA: %s\n\tIP: %+v\n\tClass: %d\n\tTTL: %+v\n", header.Name, self.IP, header.Class, header.TTL)
+
+func (self *AAAARecord) Data() ([]byte, error) {
+    return []byte(self.IP)[len(self.IP) - 16: ], nil
+}
+
+func (self *AAAARecord) Print(indent string) {
+    fmt.Printf("%sHeader:\n%s\t%s\n", indent, indent, self.Header().String())
+    fmt.Printf("%s\t     IP: %+v", self.IP)
+}
+
+func (self *AAAARecord) Serialize() ([]byte, error) {
+    var result = make([]byte, 0)
+    var buffer = bytes.NewBuffer(result)
+
+    var header, err = self.Header().Serialize()
+    if err != nil { return nil, err }
+    buffer.Write(header)
+
+    data, err := self.Data()
+    if err != nil { return nil, err }
+    buffer.Write(data)
+
+    return buffer.Bytes(), nil
 }
 
 func AAAA(hostname string, ttl time.Duration, target net.IP) (*AAAARecord, error) {
@@ -86,11 +126,11 @@ func AAAA(hostname string, ttl time.Duration, target net.IP) (*AAAARecord, error
 
     return &AAAARecord{
         RecordHeader{
-            hostname,
-            1,                           // 'IN' class
-            28,                          // AAA Records are type 28
-            ttl,
-            16,                          // AAAA Records send the target IP in a 16-octet data section
+            Name:        hostname,
+            Type:        AAAA_RECORD,
+            Class:       1,                           // 'IN' class
+            TTL:         ttl,
+            RDataLength: 16,                          // AAAA Records send the target IP in a 16-octet data section
         },
         target,
     }, nil

@@ -39,3 +39,10 @@ func Btoi(b bool) uint8 {
     if b { return 1 }
     return 0
 }
+
+func Uint16ToBytes(source uint16) []byte {
+    var result = make([]byte, 2)
+    result[0] = byte(uint8(source >> 8))
+    result[1] = byte(uint8(source & 0xFFFF))
+    return result
+}

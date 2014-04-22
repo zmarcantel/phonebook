@@ -23,6 +23,10 @@ func main() {
     if err != nil { panic(err) }
     server.AddRecord(aaaa)
 
+    srv, err := record.SRV("_test._tcp.zed.io", "zed.io", 10 * time.Second, 5, 5, 8053)
+    if err != nil { panic(err) }
+    server.AddRecord(srv)
+
     watchSignals(lock)
     server.Start(lock)
 

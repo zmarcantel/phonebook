@@ -22,20 +22,17 @@ type QuestionRaw struct {
 }
 
 func (self Question) Serialize() ([]byte, error) {
-    var label, err = record.CreateMessageLabel(self.Name)
-    if err != nil { return nil, err }
-
     var result = make([]byte, 0)
     var buffer = bytes.NewBuffer(result)
 
-    err = binary.Write(buffer, binary.BigEndian, QuestionRaw{
-        label,
-        self.Type,
-        self.Class,
-    })
+    var label, err = record.CreateMessageLabel(self.Name)
     if err != nil { return nil, err }
+    buffer.Write(label)
 
-    return result, nil
+    buffer.Write(Uint16ToBytes(self.Type))
+    buffer.Write(Uint16ToBytes(self.Class))
+
+    return buffer.Bytes(), nil
 }
 
 type QuestionCollection []Question
@@ -44,17 +41,14 @@ func (self QuestionCollection) Serialize() ([]byte, error) {
     var result = make([]byte, 0)
     var buffer = bytes.NewBuffer(result)
 
-    var err error
-    var serialized []byte
     for _, q := range self {
-        serialized, err = q.Serialize()
+        serialized, err := q.Serialize()
         if err != nil { return nil, err }
 
-        _, err = buffer.Write(serialized)
-        if err != nil { return nil, err }
+        buffer.Write(serialized)
     }
 
-    return bytes.TrimSpace(result), nil
+    return bytes.TrimSpace(buffer.Bytes()), nil
 }
 
 
