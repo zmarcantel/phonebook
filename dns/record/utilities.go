@@ -6,6 +6,9 @@ import (
     "encoding/binary"
 )
 
+//
+// Transform a label string into the DNS label-packing format
+//
 func CreateMessageLabel(source string) ([]byte, error) {
     var result = make([]byte, 0)
     var buffer = bytes.NewBuffer(result)
@@ -30,11 +33,9 @@ func CreateMessageLabel(source string) ([]byte, error) {
     return bytes.TrimSpace(buffer.Bytes()), nil
 }
 
-
-func RawToRecord(raw *RawRecord) (Record, error) {
-    return nil, nil
-}
-
+//
+// Correctly serialize a 16bit unsigned integer into a byte array of length 2
+//
 func Uint16ToBytes(source uint16) []byte {
     var result = make([]byte, 2)
     result[0] = byte(uint8(source >> 8))
@@ -42,6 +43,9 @@ func Uint16ToBytes(source uint16) []byte {
     return result
 }
 
+//
+// Correctly serialize a 32bit unsigned integer into a byte array of length 4
+//
 func Uint32ToBytes(source uint32) []byte {
     var result = make([]byte, 4)
     var high = Uint16ToBytes(uint16(source >> 16))

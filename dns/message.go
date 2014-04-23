@@ -4,7 +4,6 @@ import (
     "fmt"
     "bytes"
     "errors"
-    "strings"
     "encoding/binary"
 
     "github.com/zmarcantel/phonebook/dns/record"
@@ -48,6 +47,9 @@ type MessageHeaderRaw struct {
     ARCount            uint16
 }
 
+//
+// Transform the MessageHeader struct into a transmittable DNS packet header
+//
 func (self *MessageHeader) Serialize() []byte {
     var raw MessageHeaderRaw
     raw.LowOpts             = Btoi(self.Response) << 7
@@ -93,51 +95,67 @@ type MessageRaw struct {
     Extra             record.RecordCollection       // Holds the RR(s) of the additional section.
 }
 
-func (self *Message) Print(indent string) {
-    fmt.Printf("Message: %d\n", self.Header.ID)
+//
+// Print the message to the stdout (convenience function)
+//
+func (self *Message) Print(indent int) {
+    var indentString string
+    for i := 0 ; i < indent; i++ { indentString += "\t" }
 
-    var shorter = strings.TrimSuffix(indent, "\n")
-    fmt.Printf("%sHeader:\n", shorter)
-    fmt.Printf("%s     Response: %v\n", shorter, self.Header.Response)
-    fmt.Printf("%s       Opcode: %d\n", shorter, self.Header.Opcode)
-    fmt.Printf("%sAuthoratative: %v\n", shorter, self.Header.Authoritative)
-    fmt.Printf("%s    Truncated: %v\n", shorter, self.Header.Truncated)
-    fmt.Printf("%s    Recursion: %v\n", shorter, self.Header.RecursionDesired)
-    fmt.Printf("%sRec Available: %v\n", shorter, self.Header.RecursionAvailable)
-    fmt.Printf("%s        RCode: %d\n", shorter, self.Header.Rcode)
-    fmt.Printf("%s      Queries: %d\n", shorter, self.Header.QDCount)
-    fmt.Printf("%s      Answers: %d\n", shorter, self.Header.ANCount)
-    fmt.Printf("%s        Names: %d\n", shorter, self.Header.NSCount)
-    fmt.Printf("%s   Additional: %d\n", shorter, self.Header.ARCount)
+    fmt.Printf("%sMessage: %d\n", indentString, self.Header.ID)
+    fmt.Printf("%sHeader:\n", indentString)
+    fmt.Printf("%s\t     Response: %v\n", indentString, self.Header.Response)
+    fmt.Printf("%s\t       Opcode: %d\n", indentString, self.Header.Opcode)
+    fmt.Printf("%s\tAuthoratative: %v\n", indentString, self.Header.Authoritative)
+    fmt.Printf("%s\t    Truncated: %v\n", indentString, self.Header.Truncated)
+    fmt.Printf("%s\t    Recursion: %v\n", indentString, self.Header.RecursionDesired)
+    fmt.Printf("%s\tRec Available: %v\n", indentString, self.Header.RecursionAvailable)
+    fmt.Printf("%s\t        RCode: %d\n", indentString, self.Header.Rcode)
+    fmt.Printf("%s\t      Queries: %d\n", indentString, self.Header.QDCount)
+    fmt.Printf("%s\t      Answers: %d\n", indentString, self.Header.ANCount)
+    fmt.Printf("%s\t        Names: %d\n", indentString, self.Header.NSCount)
+    fmt.Printf("%s\t   Additional: %d\n", indentString, self.Header.ARCount)
 
-    fmt.Println("\tQuestions:")
-    self.Questions.Print(indent)
-    fmt.Println("\tAnswers:")
-    self.Answers.Print(indent)
-    fmt.Println("\tNS:")
-    self.Ns.Print(indent)
-    fmt.Println("\tExtra:")
-    self.Extra.Print(indent)
+    fmt.Printf("%sQuestions:\n", indentString)
+    self.Questions.Print(indent + 1)
+    fmt.Printf("%sAnswers:\n", indentString)
+    self.Answers.Print(indent + 1)
+    fmt.Printf("%sNS:\n", indentString)
+    self.Ns.Print(indent + 1)
+    fmt.Printf("%sExtra:\n", indentString)
+    self.Extra.Print(indent + 1)
 }
 
+
+//
+// Transform the entire message into a transmittable DNS packet
+// This is a crucial function to the response to queries
+//
 func (self *Message) Serialize() ([]byte, error) {
+    // make an empty buffer
     var result = make([]byte, 0)
     var buffer = bytes.NewBuffer(result)
+
+    // first, grab the header
     var header = self.Header.Serialize()
     buffer.Write(header)
 
+    // then copy over any questions
     que, err := self.Questions.Serialize()
     if err != nil { return nil, errors.New("ERROR: Could not serialize Questions:\n" + err.Error()) }
     buffer.Write(que)
 
+    // fill in our answers
     ans, err := self.Answers.Serialize()
     if err != nil { return nil, errors.New("ERROR: Could not serialize Answers:\n" + err.Error()) }
     buffer.Write(ans)
 
+    // we won't have any nameserver records, but do that just in case
     ns, err := self.Ns.Serialize()
     if err != nil { return nil, errors.New("ERROR: Could not serialize NS:\n" + err.Error()) }
     buffer.Write(ns)
 
+    // and any additional features, records, etc that need to be communicated
     extra, err := self.Extra.Serialize()
     if err != nil { return nil, errors.New("ERROR: Could not serialize Extra:\n" + err.Error()) }
     buffer.Write(extra)
@@ -149,10 +167,12 @@ func (self *Message) Serialize() ([]byte, error) {
 // Functions
 //----------------------------------------------
 
+//
+// Translate a DNS packet into a readable message
+//
 func UnpackMessage(source []byte) *Message {
     header, offset := UnpackHeader(source)
     questions, offset := UnpackQuestions(source[offset:], int(header.QDCount))
-    _, offset = UnpackResources(source[offset:], int(header.ANCount))
 
     return &Message{
         header,
@@ -163,6 +183,9 @@ func UnpackMessage(source []byte) *Message {
     }
 }
 
+//
+// Extract the header from the DNS packet
+//
 func UnpackHeader(source []byte) (MessageHeader, int) {
     var raw MessageHeaderRaw
     binary.Read(bytes.NewReader(source), binary.BigEndian, &raw)
@@ -184,9 +207,3 @@ func UnpackHeader(source []byte) (MessageHeader, int) {
     return header, 12 // TODO: non-hardcoded length
 }
 
-func reverse(input []byte) []byte {
-    for i, j := 0, len(input)-1; i < j; i, j = i+1, j-1 {
-        input[i], input[j] = input[j], input[i]
-    }
-    return input
-}

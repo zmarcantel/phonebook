@@ -7,56 +7,49 @@ import (
     "github.com/zmarcantel/phonebook/dns/record"
 )
 
-var ErrNotFound = errors.New("ERROR: That record does not exist")
+var ErrNotFound     error   = errors.New("ERROR: That record does not exist")
 
+
+// naive cache...
+// TODO: modular cache mechanisms
 var cache map[string][]record.Record
 
+
+//
+// Add a record to the DNS server's lcoal cache
+// This is the function responsible for registering new records so they can be queried
+//
 func AddRecord(rec record.Record) error {
+    // input validation
     if rec == nil { return errors.New("ERROR: Cannot add nil record.") }
     if cache == nil { cache = make(map[string][]record.Record) }
 
-    var header = rec.Header()
-    var otherRecords = FindRecordsByLabel(header.Name)
+    // check if a record's label has been registered in the cache
+    // if not, we need to make an entry in the cache for that label
+    var otherRecords = FindRecordsByLabel(rec.GetLabel())
     if otherRecords == nil {
-        cache[header.Name] = make([]record.Record, 0)
+        cache[rec.GetLabel()] = make([]record.Record, 0)
     }
 
+    // whether it's a fresh list or one with existing records, append the
+    // new record to the "cache line"
     otherRecords = append(otherRecords, rec)
-    switch (rec.Header().Type) {
 
+    // give ability to handle per-record-type adding procedure
+    switch (rec.GetType()) {
         default:
-            cache[strings.TrimSuffix(header.Name, ".")] = otherRecords
+            // default -- trim any authoratative trailing "."
+            cache[strings.TrimSuffix(rec.GetLabel(), ".")] = otherRecords
             break
     }
 
     return nil
 }
 
-func FindRecordsByLabel(label string) []record.Record {
-    if records, exists := cache[strings.TrimSuffix(label, ".")] ; exists {
-        return records
-    } else {
-        return nil
-    }
-}
 
-func FindRecord(label string, rType uint16, rClass uint16) (record.Record, error) {
-    var records = FindRecordsByLabel(label)
-    if records == nil {
-        return nil, errors.New("ERROR: No records for label: " + label)
-    }
-
-    for _, rec := range records {
-        var header = rec.Header()
-        if header.Type == rType {
-            return rec, nil
-        }
-    }
-
-    return nil, ErrNotFound
-}
-
-
-func DumpCache() map[string][]record.Record {
+//
+// Return the full contents of the cache as a map[string][]Record
+//
+func GetCache() map[string][]record.Record {
     return cache
 }

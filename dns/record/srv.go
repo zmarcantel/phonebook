@@ -22,16 +22,39 @@ type SRVRecord struct {
     Target                  string
 }
 
-func (self *SRVRecord) Header() *RecordHeader {
-    return &RecordHeader {
-        Name:        self.Name,
-        Type:        self.Type,
-        Class:       self.Class,
-        TTL:         self.TTL,
-        RDataLength: self.RDataLength,
-    }
+//
+// Print the record to stdout (convenience function)
+//
+func (self *SRVRecord) Print(indent int) {
+    var indentString string
+    for i := 0 ; i < indent; i++ { indentString += "\t" }
+
+    fmt.Printf("%sSRV:\n", indentString)
+    fmt.Printf("%s\t   Label: %s\n", indentString, self.Name)
+    fmt.Printf("%s\t     TTL: %+v\n", indentString, self.TTL)
+    fmt.Printf("%s\tPriority: %d\n", indentString, self.Priority)
+    fmt.Printf("%s\t  Weight: %d\n", indentString, self.Weight)
+    fmt.Printf("%s\t    Port: %d\n", indentString, self.Port)
+    fmt.Printf("%s\t  Target: %+v\n", indentString, self.Target)
 }
 
+//
+// Return the record type
+//
+func (self *SRVRecord) GetType() uint16 {
+    return self.Type
+}
+
+//
+// Return the record label
+//
+func (self *SRVRecord) GetLabel() string {
+    return self.Name
+}
+
+//
+// Return (serialized) any data that affect the record's "Data Length" property
+//
 func (self *SRVRecord) Data() ([]byte, error) {
     var result = make([]byte, 0)
     var buffer = bytes.NewBuffer(result)
@@ -47,16 +70,10 @@ func (self *SRVRecord) Data() ([]byte, error) {
     return buffer.Bytes(), nil
 }
 
-func (self *SRVRecord) Print(indent string) {
-    fmt.Printf("%sSRV:\n", indent)
-    fmt.Printf("%s\t   Label: %s\n", indent, self.Name)
-    fmt.Printf("%s\tPriority: %d\n", indent, self.Priority)
-    fmt.Printf("%s\t  Weight: %d\n", indent, self.Weight)
-    fmt.Printf("%s\t    Port: %d\n", indent, self.Port)
-    fmt.Printf("%s\t  Target: %+v\n", indent, self.Target)
-}
-
-func (self SRVRecord) Serialize() ([]byte, error) {
+//
+// Translate the record into a byte array to be placed in a DNS packet
+//
+func (self *SRVRecord) Serialize() ([]byte, error) {
     var result = make([]byte, 0)
     var buffer = bytes.NewBuffer(result)
 
@@ -79,6 +96,9 @@ func (self SRVRecord) Serialize() ([]byte, error) {
     return buffer.Bytes(), nil
 }
 
+//
+// Create a SRV record given the name, target, TTL, priority, weight, and port
+//
 func SRV(name, target string, ttl time.Duration, priority, weight, port uint16) (*SRVRecord, error) {
     if len(name) <= 0 {
         return nil, errors.New("A base hostname is required.")

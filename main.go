@@ -15,6 +15,10 @@ import (
 var lock = make(chan error)
 
 func main() {
+
+    //
+    // Add testing records, one of each type, until test suite built
+    //
     var a, err = record.A("zed.io", 10 * time.Second, net.ParseIP("127.0.0.1"))
     if err != nil { panic(err) }
     server.AddRecord(a)
@@ -27,21 +31,39 @@ func main() {
     if err != nil { panic(err) }
     server.AddRecord(srv)
 
+
+    //
+    // Setup the signal handlers and start the server
+    // The channel serves as an unhandled exception
+    //
+
     watchSignals(lock)
     server.Start(lock)
 
+    // wait for either unhandled exception or nil (signal)
     err = <-lock
     die(err)
 }
 
+
+
+//
+// Responds to an error or signal being put on the server-lock
+//
 func die(err error) {
-    if err == nil {
-        os.Exit(0)
+    // signals put nil on the channel, so ignore those
+    if err != nil {
+        fmt.Printf("ERROR: %s\n", err)
     }
 
-    fmt.Printf("ERROR: %s\n", err)
+    // exit
+    os.Exit(0)
 }
 
+
+//
+// Defines handlers for OS signals
+//
 func watchSignals(done chan error) {
     var sigint = make(chan os.Signal, 1)
     signal.Notify(sigint, os.Interrupt)

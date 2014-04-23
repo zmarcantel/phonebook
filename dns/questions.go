@@ -8,6 +8,9 @@ import (
     "github.com/zmarcantel/phonebook/dns/record"
 )
 
+//----------------------------------------------
+// Question Structures
+//----------------------------------------------
 
 type Question struct {
     Name   string
@@ -21,6 +24,9 @@ type QuestionRaw struct {
     Class  uint16
 }
 
+//
+// Transform the struct into a transmittable DNS record byte array
+//
 func (self Question) Serialize() ([]byte, error) {
     var result = make([]byte, 0)
     var buffer = bytes.NewBuffer(result)
@@ -35,8 +41,16 @@ func (self Question) Serialize() ([]byte, error) {
     return buffer.Bytes(), nil
 }
 
+
+//----------------------------------------------
+// Question Collection Structures
+//----------------------------------------------
+
 type QuestionCollection []Question
 
+//
+// Serializes a set of questions using each query's .Serialize() function
+//
 func (self QuestionCollection) Serialize() ([]byte, error) {
     var result = make([]byte, 0)
     var buffer = bytes.NewBuffer(result)
@@ -51,17 +65,22 @@ func (self QuestionCollection) Serialize() ([]byte, error) {
     return bytes.TrimSpace(buffer.Bytes()), nil
 }
 
-
-func (self QuestionCollection) Print(indent string) {
-    fmt.Printf("%sQuestions:\n", indent)
+//
+// Print out the list of queries (convenience function)
+//
+func (self QuestionCollection) Print(indent int) {
+    var indentString string
+    for i := 0 ; i < indent; i++ { indentString += "\t" }
     for _, q := range self {
-        fmt.Printf("%sName: %s\n", indent, q.Name)
-        fmt.Printf("%s\tClass: %d\n", indent, q.Class)
-        fmt.Printf("%s\t Type: %d\n", indent, q.Type)
+        fmt.Printf("%sName: %s\n", indentString, q.Name)
+        fmt.Printf("%s\tClass: %d\n", indentString, q.Class)
+        fmt.Printf("%s\t Type: %d\n", indentString, q.Type)
     }
 }
 
-
+//
+// Transform the queries in a DNS packet into a question structure
+//
 func UnpackQuestions(source []byte, count int) ([]Question, int) {
     var result = make([]Question, count)
 
