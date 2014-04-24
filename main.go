@@ -41,6 +41,14 @@ func main() {
     if err != nil { panic(err) }
     server.AddRecord(ptr2)
 
+    mx, err := record.MX("mail.production", "mail.zed.io", 5, 10 * time.Second)
+    if err != nil { panic(err) }
+    server.AddRecord(mx)
+
+    mxHigher, err := record.MX("mail.production", "internal.mail.zed.io", 20, 10 * time.Second)
+    if err != nil { panic(err) }
+    server.AddRecord(mxHigher)
+
     fmt.Printf("\n%+v\n\n", server.GetCache())
 
 

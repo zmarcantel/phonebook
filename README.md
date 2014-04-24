@@ -35,6 +35,7 @@ Records Supported
 2. `SRV`
 3. `CNAME`
 4. `PTR`
+5. `MX`
 
 
 Server

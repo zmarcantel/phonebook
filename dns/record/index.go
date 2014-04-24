@@ -13,6 +13,7 @@ const (
     SRV_RECORD uint16      = 33
     CNAME_RECORD uint16    = 5
     PTR_RECORD uint16      = 12
+    MX_RECORD uint16       = 15
 )
 
 
@@ -23,6 +24,7 @@ var TypeIntToString = map[uint16]string {
     SRV_RECORD:         "SRV",
     CNAME_RECORD:       "CNAME",
     PTR_RECORD:         "PTR",
+    MX_RECORD:          "MX",
 }
 
 //----------------------------------------------
