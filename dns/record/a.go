@@ -85,7 +85,10 @@ func A(hostname string, ttl time.Duration, target net.IP) (*ARecord, error) {
         return nil, errors.New(fmt.Sprintf("The record must contain a hostname. Received: '%s'.", hostname))
     } else if ttl.Seconds() < 5 { // TODO: get actual max class int
         return nil, errors.New(fmt.Sprintf("TTL of <5s is not supported. Received: %d", ttl.Seconds))
+    } else if target == nil || target.DefaultMask() == nil {
+        return nil, ErrInvalidIP
     }
+
     // TODO: add checks on target -- are we remapping the current IP and some other security stuff
 
     return &ARecord{
@@ -179,7 +182,10 @@ func AAAA(hostname string, ttl time.Duration, target net.IP) (*AAAARecord, error
         return nil, errors.New(fmt.Sprintf("The record must contain a hostname. Received: '%s'.", hostname))
     } else if ttl.Seconds() < 5 { // TODO: get actual max class int
         return nil, errors.New(fmt.Sprintf("TTL of <5s is not supported. Received: %d", ttl.Seconds))
+    } else if target.DefaultMask() != nil || target == nil {
+        return nil, ErrInvalidIP
     }
+
     // TODO: add checks on target -- are we remapping the current IP and some other security stuff
 
     return &AAAARecord{

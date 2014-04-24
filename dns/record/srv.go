@@ -121,6 +121,6 @@ func SRV(name, target string, ttl time.Duration, priority, weight, port uint16) 
     }
 
     // serialize to catch errors
-    _, err := result.Data()
+    _, err := result.Serialize()
     return result, err
 }

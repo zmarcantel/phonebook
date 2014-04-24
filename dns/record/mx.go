@@ -112,6 +112,6 @@ func MX(name, target string, priority uint16, ttl time.Duration) (*MXRecord, err
     }
 
     // serialize to catch errors
-    _, err := result.Data()
+    _, err := result.Serialize()
     return result, err
 }

@@ -46,7 +46,7 @@ Server
     * Allow multiple listeners within the same process sharing a common error handler, pipeline, etc (if desired)
 2. Fast
     * Every received packet/query is handled in an isolated thread
-    * All operation are in memory so limited only by I/O sppeds (network, task switching, memory latency)
+    * All operation are in memory so limited only by I/O speeds (network, task switching, memory latency)
 3. Hackable
     * The codebase is designed to be extremely modular
     * Adding features, layers, extensions, etc become easier as the actual DNS wire protocol is entirely abstracted away while remaining reusable

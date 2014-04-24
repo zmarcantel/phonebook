@@ -4,6 +4,7 @@ import (
     "fmt"
     "time"
     "bytes"
+    "errors"
 )
 
 // constants representing record type values
@@ -26,6 +27,8 @@ var TypeIntToString = map[uint16]string {
     PTR_RECORD:         "PTR",
     MX_RECORD:          "MX",
 }
+
+var ErrInvalidIP = errors.New("Invalid IP type for record")
 
 //----------------------------------------------
 // Record Header Structures

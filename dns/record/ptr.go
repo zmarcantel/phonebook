@@ -78,7 +78,6 @@ func (self *PTRRecord) Serialize() ([]byte, error) {
 
     self.RDataLength = uint16(len(data))
     buffer.Write(Uint16ToBytes(self.RDataLength))
-
     buffer.Write(data)
 
     return buffer.Bytes(), nil
@@ -107,6 +106,6 @@ func PTR(name, target string, ttl time.Duration) (*PTRRecord, error) {
     }
 
     // serialize to catch errors
-    _, err := result.Data()
+    _, err := result.Serialize()
     return result, err
 }
