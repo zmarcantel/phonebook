@@ -5,6 +5,7 @@ import (
     "fmt"
     "time"
     "errors"
+    "strconv"
 
     "github.com/zmarcantel/phonebook/dns"
     "github.com/zmarcantel/phonebook/dns/record"
@@ -12,7 +13,6 @@ import (
 
 const (
     DNSTimeout      time.Duration   = 2 * 1e8
-    DEFAULT_HOST    string          = "127.0.0.1:domain"
 )
 
 var ErrShortRead    error           = errors.New("short read")
@@ -20,13 +20,26 @@ var ErrShortRead    error           = errors.New("short read")
 
 //
 // Start up the server and use the given channel as a killswitch
+//    Bind: string representation of interface to bind to ("127.0.0.1", "localhost", ":::1", "0.0.0.0", etc)
+//    Port: port to listen for queries on
 //
-func Start(die chan error) {
+func Start(bind string, port int, die chan error) {
     // get the DNS address for the DNS host
-    // TODO: parameterize the address, not just localhost
-    addr, err := net.ResolveUDPAddr("udp", DEFAULT_HOST)
+
+    if len(bind) == 0 || bind == "localhost" {
+        fmt.Printf("Using DEFULT_HOST:127.0.0.1 based on binding input: %s\n", bind)
+        bind = "127.0.0.1"
+    }
+
+    if port <= 0 {
+        fmt.Printf("Using DEFULT_PORT:53 based on port input: %d\n", port)
+        port = 53
+    }
+
+    addr, err := net.ResolveUDPAddr("udp", bind + ":" + strconv.Itoa(port))
     if err != nil {
-        // if there was an error, abort
+        // there was an error parsing binding address
+        // pass the error and abort
         die <- err
         return
     }
@@ -44,10 +57,22 @@ func Start(die chan error) {
     go Listen(conn, die)
 }
 
+//
+// Shorthand for listening on localhost:53
+//
+func Local(die chan error) {
+    Start("127.0.0.1", 53, die)
+}
+
+
+//
+// Listen on the net.UDPConn for incoming packets
+// Responsible for intake only
+//
 func Listen(conn *net.UDPConn, die chan error) {
     // announce the listener
     fmt.Printf("DNS Server listening on: %s\n", conn.LocalAddr())
-    
+
     // defer closing the connection until the below for loop exits
     // only happens on kill/int signal, error, etc
     defer conn.Close()
@@ -80,6 +105,7 @@ func Listen(conn *net.UDPConn, die chan error) {
 
 //
 // Take in a DNS query and respond with a Record, [], or error code
+// Runs in isolated/concurrent thread
 //
 func Serve(conn *net.UDPConn, addr net.Addr, query []byte) {
     // TODO: catch and respond to packet errors

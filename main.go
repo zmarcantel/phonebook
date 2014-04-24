@@ -12,8 +12,6 @@ import (
 
 )
 
-var lock = make(chan error)
-
 func main() {
 
     //
@@ -37,8 +35,10 @@ func main() {
     // The channel serves as an unhandled exception
     //
 
+    var lock = make(chan error, 10)
     watchSignals(lock)
-    server.Start(lock)
+    server.Start("127.0.0.1", 53, lock)
+    // shorthand for the above would be "server.Local(lock)"
 
     // wait for either unhandled exception or nil (signal)
     err = <-lock

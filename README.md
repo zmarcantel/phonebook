@@ -1,7 +1,7 @@
 phonebook
 =========
 
-A lightweight/minimal DNS server written in Go.
+A lightweight/minimal DNS server written in Go. [(godoc)](http://godoc.org/github.com/zmarcantel/phonebook)
 
 
 Motivation
@@ -23,10 +23,9 @@ Features
 TODO
 ----
 
-1. Allow address binding other than `localhost`
-2. Support all standard (non-NS) record types
-3. Modular cache backing
-4. DNSSEC and signing of packets
+1. Support all standard (non-NS) record types
+2. Modular cache backing
+3. DNSSEC and signing of packets
 
 
 Records Supported
@@ -101,11 +100,13 @@ func main() {
     var productionRecords = recordSetA()
     var testingRecords = recordSetB()
 
-    var lock = make(chan err)      // make an error channel
-    serve.Start(lock)              // start listening on localhost
+    var lock = make(chan err)              // make an error channel
+    serve.Start("localhost", 53, lock)     // start listening on localhost, standard port
 
-    var err := <-lock              // blocks
-    handleServerError(err)         // not implemented here -- panic, print, whatever
+    // shorthand for the above .Start() is serve.Local(lock)
+
+    var err := <-lock                      // blocks
+    handleServerError(err)                 // not implemented here -- panic, print, whatever
 
     // dies on single error
     // wrap the above two lines in a "bare" (for{}) loop to go on forever
