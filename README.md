@@ -32,9 +32,8 @@ Records Supported
 -----------------
 
 1. `A` and `AAAA`
-    * Resolve a top-level name (example.com) to an IP (or IPv6 with `AAAA`)
 2. `SRV`
-    * Report an available service by pointing to an `A` or `AAAA` record to resolve IP of machine
+3. `CNAME`
 
 
 Server

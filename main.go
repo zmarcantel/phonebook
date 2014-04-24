@@ -29,6 +29,12 @@ func main() {
     if err != nil { panic(err) }
     server.AddRecord(srv)
 
+    cname, err := record.CNAME("app.production", "zed.io", 10 * time.Second)
+    if err != nil { panic(err) }
+    server.AddRecord(cname)
+
+    fmt.Printf("\n%+v\n\n", server.GetCache())
+
 
     //
     // Setup the signal handlers and start the server

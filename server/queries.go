@@ -25,22 +25,22 @@ func AnswerQuestions(questions []dns.Question) ([]record.Record, error) {
             var records = FindRecordsByLabel(question.Name)
             result = append(result, records...)
             continue
-        } else {
-        // handle a (label x type) search
-            var recs, err = FindRecords(question.Name, question.Type)
-            if err != nil {
-                // handle not founds differently
-                if err == ErrNotFound {
-                    fmt.Printf("%s (type: %d) | not found\n", question.Name, question.Type)
-                    continue
-                } else {
-                    return nil, err
-                }
-            }
-
-            // append the record we found to any previously found
-            result = append(result, recs...)
         }
+
+        // handle a (label x type) search
+        var recs, err = FindRecords(question.Name, question.Type, true)
+        if err != nil {
+            // handle not founds differently
+            if err == ErrNotFound {
+                fmt.Printf("%s (type: %d) | not found\n", question.Name, question.Type)
+                continue
+            } else {
+                return nil, err
+            }
+        }
+
+        // append the record we found to any previously found
+        result = append(result, recs...)
     }
 
     return result, nil
@@ -61,7 +61,7 @@ func FindRecordsByLabel(label string) []record.Record {
 //
 // Returns the records in the cache that match the label and type queried
 //
-func FindRecords(label string, rType uint16) ([]record.Record, error) {
+func FindRecords(label string, rType uint16, recursively bool) ([]record.Record, error) {
     // naive iterative search dependent on FindRecordsByLabel
     var records = FindRecordsByLabel(label)
     if records == nil {
@@ -76,6 +76,36 @@ func FindRecords(label string, rType uint16) ([]record.Record, error) {
         if rec.GetType() == rType {
             result = append(result, rec)
         }
+
+        // handle any locally-recursive queries needed
+
+        var err error
+        var recursiveRecords []record.Record
+
+        // if the current record is a CNAME
+        if rec.GetType() == record.CNAME_RECORD && recursively {
+
+            // but we were looking for and A/AAAA record... recurse
+            if rType == record.A_RECORD || rType == record.AAAA_RECORD {
+                // lookup A records
+                ipv4Records, ipv4Err := FindRecords(rec.(*record.CNAMERecord).Target, record.A_RECORD, true)
+                if ipv4Err != nil && ipv4Err != ErrNotFound { return nil, ipv4Err }
+
+                // lookup AAAA records
+                ipv6Records, ipv6Err := FindRecords(rec.(*record.CNAMERecord).Target, record.AAAA_RECORD, true)
+                if ipv6Err != nil && ipv6Err != ErrNotFound { return nil, ipv6Err }
+
+                // the CNAME comes first, then A, then AAAA
+                recursiveRecords = []record.Record{rec}
+                recursiveRecords = append(recursiveRecords, ipv4Records...)
+                recursiveRecords = append(recursiveRecords, ipv6Records...)
+            }
+
+        }
+
+        // cleanup recursive errors and append their results
+        if err != nil && err != ErrNotFound { return nil, err }
+        result = append(result, recursiveRecords...)
     }
 
     // if we found none, 404
