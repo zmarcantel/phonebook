@@ -33,6 +33,14 @@ func main() {
     if err != nil { panic(err) }
     server.AddRecord(cname)
 
+    ptr, err := record.PTR("127.0.0.1", "zed.io", 10 * time.Second)
+    if err != nil { panic(err) }
+    server.AddRecord(ptr)
+
+    ptr2, err := record.PTR("10.27/1.168.192.app.production", "zed.io", 10 * time.Second)
+    if err != nil { panic(err) }
+    server.AddRecord(ptr2)
+
     fmt.Printf("\n%+v\n\n", server.GetCache())
 
 

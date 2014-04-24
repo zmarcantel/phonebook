@@ -34,6 +34,7 @@ Records Supported
 1. `A` and `AAAA`
 2. `SRV`
 3. `CNAME`
+4. `PTR`
 
 
 Server
