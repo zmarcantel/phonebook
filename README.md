@@ -23,8 +23,7 @@ Features
 TODO
 ----
 
-1. Modular cache backing
-2. DNSSEC for verification of source
+1. DNSSEC for verification of source
 
 
 Records Supported
@@ -44,12 +43,27 @@ Server
 1. Modular
     * The listener exists in its own thread separate from the calling context
     * Allow multiple listeners within the same process sharing a common error handler, pipeline, etc (if desired)
+    * Even the data backing is pluggable! [modular storage](#modular-storage)
 2. Fast
     * Every received packet/query is handled in an isolated thread
     * All operation are in memory so limited only by I/O speeds (network, task switching, memory latency)
 3. Hackable
     * The codebase is designed to be extremely modular
     * Adding features, layers, extensions, etc become easier as the actual DNS wire protocol is entirely abstracted away while remaining reusable
+
+
+Modular Storage
+---------------
+
+Storage of records will be domain specific.
+
+Use redis, files, Mongo, Cassandra.... whatever you'd like.
+
+The `server.Server` type includes a field `Store` that is of type `DNSStore`. This storage interface must support all the functions needed to query DNS records. However, this interface can be tweaked, expanded, or new ones created with no effect to the central server.
+
+Similarly, an application can spin up two DNS servers querying records from two separate data sources within the same application (if you want).
+
+For details on implementing your own `Store` check out the [(dnsstore godoc)](http://godoc.org/github.com/zmarcantel/phonebook/server/store) and the reference MapStore implementation.
 
 
 Intentional Limitations
@@ -97,15 +111,20 @@ import (
 )
 
 func main() {
+    // setup the server -- first, make a fatal error channel
+    // then, start listening on localhost:53 (standard port)
+    // the nil argument represents an optional [storage backing](#modular-storage) (defaults to map storage)
+    // shorthand for the below is serve.Local(nil, lock)
+    var lock = make(chan err)
+    var server = serve.Start("localhost", 53, nil, lock)
+
+
     // create some records
-    var productionRecords = recordSetA()
-    var testingRecords = recordSetB()
+    var productionRecords = recordSetA(server)
+    var testingRecords = recordSetB(server)
 
-    var lock = make(chan err)              // make an error channel
-    serve.Start("localhost", 53, lock)     // start listening on localhost, standard port
 
-    // shorthand for the above .Start() is serve.Local(lock)
-
+    // erro handling
     var err := <-lock                      // blocks
     handleServerError(err)                 // not implemented here -- panic, print, whatever
 
@@ -113,41 +132,41 @@ func main() {
     // wrap the above two lines in a "bare" (for{}) loop to go on forever
 }
 
-func recordSetA() []*dns.Record {
+func recordSetA(server *serve.Server) []*dns.Record {
     // give the A record a label, TTL, and target IP
     a, err := dns.A("app.production", 10 * time.Second, net.ParseIP("10.0.8.15"))
     handleCreationErr("A", err)
-    serve.AddRecord(a)
+    server.Store.Add(a)
 
     // give the AAAA record a label, TTL, and target IP
     b, err := dns.AAAA("ipv6.app.production", 10 * time.Second, net.ParseIP("2001:0db8:85a3:0042:1000:8a2e:0370:7334"))
     handleCreationErr("AAAA", err)
-    serve.AddRecord(b)
+    server.Store.Add(b)
 
     // give the SRV record a label, target host, TTL, priority, weight, and port
     c, err := record.SRV("_logging._udp.app.production", "app.production", 10 * time.Second, 10, 5, 8053)
     handleCreationErr("SRV", err)
-    serve.AddRecord(c)
+    server.Store.Add(c)
 
     return []*dns.Record { a, b, c }
 }
 
 
-func recordSetB() []*dns.Record {
+func recordSetB(server *serve.Server) []*dns.Record {
     // give the A record a label, TTL, and target IP
     a, err := dns.A("app.test", 10 * time.Second, net.ParseIP("10.0.1.15"))
     handleCreationErr("A", err)
-    serve.AddRecord(a)
+    server.Store.Add(a)
 
     // give the AAAA record a label, TTL, and target IP
     b, err := dns.AAAA("ipv6.app.production", 10 * time.Second, net.ParseIP("fe80:0000:0000:0000:0202:b3ff:fe1e:8329"))
     handleCreationErr("AAAA", err)
-    serve.AddRecord(b)
+    server.Store.Add(b)
 
     // give the SRV record a label, target host, TTL, priority, weight, and port
     c, err := record.SRV("_logging._udp.app.test", "app.test", 10 * time.Second, 10, 5, 8053)
     handleCreationErr("SRV", err)
-    serve.AddRecord(c)
+    server.Store.Add(c)
 
     return []*dns.Record { a, b, c }
 }

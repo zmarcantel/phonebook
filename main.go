@@ -8,53 +8,12 @@ import (
     "os/signal"
 
     "github.com/zmarcantel/phonebook/server"
+    "github.com/zmarcantel/phonebook/server/store"
     "github.com/zmarcantel/phonebook/dns/record"
 
 )
 
 func main() {
-
-    //
-    // Add testing records, one of each type, until test suite built
-    //
-    var a, err = record.A("zed.io", 10 * time.Second, net.ParseIP("127.0.0.1"))
-    if err != nil { panic(err) }
-    server.AddRecord(a)
-
-    aaaa, err := record.AAAA("zed.io", 10 * time.Second, net.ParseIP("::1"))
-    if err != nil { panic(err) }
-    server.AddRecord(aaaa)
-
-    srv, err := record.SRV("_test._tcp.zed.io", "zed.io", 10 * time.Second, 5, 5, 8053)
-    if err != nil { panic(err) }
-    server.AddRecord(srv)
-
-    cname, err := record.CNAME("app.production", "zed.io", 10 * time.Second)
-    if err != nil { panic(err) }
-    server.AddRecord(cname)
-
-    ptr, err := record.PTR("127.0.0.1", "zed.io", 10 * time.Second)
-    if err != nil { panic(err) }
-    server.AddRecord(ptr)
-
-    ptr2, err := record.PTR("10.27/1.168.192.app.production", "zed.io", 10 * time.Second)
-    if err != nil { panic(err) }
-    server.AddRecord(ptr2)
-
-    mx, err := record.MX("mail.production", "mail.zed.io", 5, 10 * time.Second)
-    if err != nil { panic(err) }
-    server.AddRecord(mx)
-
-    mxHigher, err := record.MX("mail.production", "internal.mail.zed.io", 20, 10 * time.Second)
-    if err != nil { panic(err) }
-    server.AddRecord(mxHigher)
-
-    txt, err := record.TXT("mail.production", 10 * time.Second, "admin email -- zach@zed.io")
-    if err != nil { panic(err) }
-    server.AddRecord(txt)
-
-    fmt.Printf("\n%+v\n\n", server.GetCache())
-
 
     //
     // Setup the signal handlers and start the server
@@ -63,8 +22,49 @@ func main() {
 
     var lock = make(chan error, 10)
     watchSignals(lock)
-    server.Start("127.0.0.1", 53, lock)
+    var serve = server.Start("127.0.0.1", 53, nil, lock)
     // shorthand for the above would be "server.Local(lock)"
+
+    //
+    // Add testing records, one of each type, until test suite built
+    //
+    var a, err = record.A("zed.io", 10 * time.Second, net.ParseIP("127.0.0.1"))
+    if err != nil { panic(err) }
+    serve.Store.Add(a)
+
+    aaaa, err := record.AAAA("zed.io", 10 * time.Second, net.ParseIP("::1"))
+    if err != nil { panic(err) }
+    serve.Store.Add(aaaa)
+
+    srv, err := record.SRV("_test._tcp.zed.io", "zed.io", 10 * time.Second, 5, 5, 8053)
+    if err != nil { panic(err) }
+    serve.Store.Add(srv)
+
+    cname, err := record.CNAME("app.production", "zed.io", 10 * time.Second)
+    if err != nil { panic(err) }
+    serve.Store.Add(cname)
+
+    ptr, err := record.PTR("127.0.0.1", "zed.io", 10 * time.Second)
+    if err != nil { panic(err) }
+    serve.Store.Add(ptr)
+
+    ptr2, err := record.PTR("10.27/1.168.192.app.production", "zed.io", 10 * time.Second)
+    if err != nil { panic(err) }
+    serve.Store.Add(ptr2)
+
+    mx, err := record.MX("mail.production", "mail.zed.io", 5, 10 * time.Second)
+    if err != nil { panic(err) }
+    serve.Store.Add(mx)
+
+    mxHigher, err := record.MX("mail.production", "internal.mail.zed.io", 20, 10 * time.Second)
+    if err != nil { panic(err) }
+    serve.Store.Add(mxHigher)
+
+    txt, err := record.TXT("mail.production", 10 * time.Second, "admin email -- zach@zed.io")
+    if err != nil { panic(err) }
+    serve.Store.Add(txt)
+
+    serve.Store.(*store.MapStore).Print()
 
     // wait for either unhandled exception or nil (signal)
     err = <-lock
