@@ -48,7 +48,13 @@ func (self *TXTRecord) GetLabel() string {
 // Return (serialized) any data that affect the record's "Data Length" property
 //
 func (self *TXTRecord) Data() ([]byte, error) {
-    return []byte(self.Text), nil
+    var result = make([]byte, 0)
+    var buffer = bytes.NewBuffer(result)
+
+    buffer.Write([]byte{ byte(len(self.Text)) })
+    buffer.Write([]byte(self.Text))
+
+    return buffer.Bytes(), nil
 }
 
 //
