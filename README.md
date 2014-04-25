@@ -23,9 +23,8 @@ Features
 TODO
 ----
 
-1. Support all standard (non-NS) record types
-2. Modular cache backing
-3. DNSSEC and signing of packets
+1. Modular cache backing
+2. DNSSEC for verification of source
 
 
 Records Supported
@@ -36,6 +35,7 @@ Records Supported
 3. `CNAME`
 4. `PTR`
 5. `MX`
+6. `TXT`
 
 
 Server

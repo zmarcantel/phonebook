@@ -877,3 +877,114 @@ func testSerializeMX(t *testing.T, label, target string, TTL time.Duration, prio
         t.Errorf("Incorrect Record Serialization:\n\tExpected: %+v\n\t     Got: %+v\n", known, serialized)
     }
 }
+
+
+//----------------------------------------------
+// TXT Tests
+//----------------------------------------------
+
+func TestTXT_CreateValid(t *testing.T) {
+    var label = "mail.production"
+    var TTL = 10 * time.Second
+    var text = "admin user is Zach Marcantel"
+
+    testTXT(t, false, label, text, TTL)
+}
+
+
+func TestTXT_CreateValid_SubdomainWithJSON(t *testing.T) {
+    var label = "app.east-1b.production"
+    var TTL = 10 * time.Second
+    var text = "{ \"version\": 0.1, \"upSince\": \"2014-04-25T06:19:59.085Z\" }"
+
+    testTXT(t, false, label, text, TTL)
+}
+
+// ----- error testing
+
+func TestTXT_CreateInvalid_EmptyLabel(t *testing.T) {
+    var label = ""
+    var TTL = 10 * time.Second
+    var text = "{ \"version\": 0.1, \"upSince\": \"2014-04-25T06:19:59.085Z\" }"
+
+    testTXT(t, true, label, text, TTL)
+}
+
+func TestTXT_CreateInvalid_EmptyText(t *testing.T) {
+    var label = "zed.io"
+    var TTL = 10 * time.Second
+    var text = ""
+
+    testTXT(t, true, label, text, TTL)
+}
+
+// ----- helper
+
+func testTXT(t *testing.T, erroneous bool, label, text string, TTL time.Duration) {
+    var record, err = TXT(label, TTL, text)
+    if err != nil && !erroneous {
+        t.Error(err)
+        return
+    }
+
+    if erroneous {
+        if err == nil {
+            t.Errorf("Failed to catch error:\n\tExpected: %s\n\tGot: %s\n", "non-nil", err)
+        }
+        return
+    }
+
+    if record.Name != label || record.GetLabel() != label {
+        t.Errorf("Incorrect Name:\n\tExpected: %s\n\tGot: %s\n", label, record.Name)
+    }
+
+    if record.TTL != TTL {
+        t.Errorf("Incorrect TTL:\n\tExpected: %d\n\tGot: %d\n", TTL, record.TTL)
+    }
+
+    if record.Class != 1 {
+        t.Errorf("Incorrect Class:\n\tExpected: %d\n\tGot: %d\n", 1, record.Class)
+    }
+
+    if record.Type != TXT_RECORD || record.GetType() != TXT_RECORD {
+        t.Errorf("Incorrect Type:\n\tExpected: %d\n\tGot: %d\n", TXT_RECORD, record.Type)
+    }
+
+    if record.Text != text {
+        t.Errorf("Incorrect Text Data:\n\tExpected: %s\n\tGot: %s\n", text, record.Text)
+    }
+}
+
+
+// ----- serializing tests
+
+func TestTXT_Serialize(t *testing.T) {
+    var label = "mail.production"
+    var TTL = 10 * time.Second
+    var text = "admin user is Zach Marcantel"
+
+    testSerializeTXT(t, label, text, TTL, []byte{
+        4, 0x6d, 0x61, 0x69, 0x6c, 10, 0x70, 0x72, 0x6f, 0x64, 0x75, 0x63, 0x74, 0x69, 0x6f, 0x6e, 0x00,
+        0x00, 0x10,                                      // type
+        0x00, 0x01,                                      // class
+        0x00, 0x00, 0x00, 0xA,                           // ttl
+        0x00, 0x1C,                                      // data length
+        0x61, 0x64, 0x6d, 0x69, 0x6e, 0x20, 0x75, 0x73, 0x65, 0x72, 0x20, 0x69, 0x73, 0x20, 0x5a, 0x61, 0x63, 0x68, 0x20, 0x4d, 0x61, 0x72, 0x63, 0x61, 0x6e, 0x74, 0x65, 0x6c,
+        })
+}
+
+func testSerializeTXT(t *testing.T, label, text string, TTL time.Duration, known []byte) {
+    var record, err = TXT(label, TTL, text)
+    if err != nil {
+        t.Error(err)
+    }
+
+    serialized, err := record.Serialize()
+    if err != nil {
+        t.Errorf("Error while serializing:\n\t%s\n", err)
+    }
+
+    if bytes.Compare(serialized, known) != 0 {
+        t.Errorf("Incorrect Record Serialization:\n\tExpected: %+v\n\t     Got: %+v\n", known, serialized)
+    }
+}

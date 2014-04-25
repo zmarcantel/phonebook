@@ -49,6 +49,10 @@ func main() {
     if err != nil { panic(err) }
     server.AddRecord(mxHigher)
 
+    txt, err := record.TXT("mail.production", 10 * time.Second, "admin email -- zach@zed.io")
+    if err != nil { panic(err) }
+    server.AddRecord(txt)
+
     fmt.Printf("\n%+v\n\n", server.GetCache())
 
 

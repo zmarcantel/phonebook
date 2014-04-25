@@ -15,6 +15,7 @@ const (
     CNAME_RECORD uint16    = 5
     PTR_RECORD uint16      = 12
     MX_RECORD uint16       = 15
+    TXT_RECORD uint16      = 16
 )
 
 
@@ -26,6 +27,7 @@ var TypeIntToString = map[uint16]string {
     CNAME_RECORD:       "CNAME",
     PTR_RECORD:         "PTR",
     MX_RECORD:          "MX",
+    TXT_RECORD:         "TXT",
 }
 
 var ErrInvalidIP = errors.New("Invalid IP type for record")
