@@ -8,6 +8,7 @@ deps:
 
 test:
 	go test ./dns/record
+	go test ./dns
 
 run: all
 	sudo bin/phonebook
